@@ -40,7 +40,7 @@ while [[ "$1" != "" ]]; do
 	case $1 in
 		start)
 			shift
-			start_timer
+			start_timer "$@"
 			exit 0
 			;;
 		
@@ -51,6 +51,16 @@ while [[ "$1" != "" ]]; do
 		
 		stop)
 			stop_timer
+			exit 0
+			;;
+		
+		pause)
+			pause_timer
+			exit 0
+			;;
+
+		resume)
+			resume_timer
 			exit 0
 			;;
 
