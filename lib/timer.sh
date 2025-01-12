@@ -1,8 +1,6 @@
 #!/bin/bash
 
 TIMER_PID=""
-TIMER_WORK_TIME=""
-TIMER_BREAK_TIME=""
 
 countdown() {
     local TIME=$1
@@ -11,7 +9,7 @@ countdown() {
     local SECONDS=$((TIME * 60))
 
     while [[ $SECONDS -gt 0 ]]; do
-        echo -ne "Time remaining: $(($SECONDS / 60))m $(($SECONDS % 60))s\033[0K\r]"
+        echo -ne "Time remaining: $(($SECONDS / 60))m $(($SECONDS % 60))s\033[0K\r"
         sleep 1
         ((SECONDS--))
 
@@ -34,31 +32,52 @@ start_pomodoro() {
     echo "Work time: $WORK_TIME minutes."
     echo "Break time: $BREAK_TIME minutes."
 
-    log_info "Pomodoro timer started with $WORK_TIME minutes of work and $BREAK_TIME minutes of break time."
-
     # Save the work and break times to a file
     echo "$WORK_TIME" > /tmp/pomodoro_work_time.txt
     echo "$BREAK_TIME" > /tmp/pomodoro_break_time.txt
 
-    # Run the countdown in the background
-    countdown "$WORK_TIME" "Work time is up. Time for a break." &
-    TIMER_PID=$!
-    echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Save the PID to a file
+    # Continuous loop for work and break cycles
+    while true; do
+        echo "Work session starting..."
+        countdown "$WORK_TIME" "Work time is up. Time for a break." &
+        TIMER_PID=$!
+        echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Save the PID to a file
+        wait $TIMER_PID
+        if [[ $? -ne 0 ]]; then
+            echo "Pomodoro timer was stopped during the work session."
+            stop_timer
+            return
+        fi
 
-    log_info "Pomodoro timer process started with PID: $TIMER_PID"
+        echo "Break session starting..."
+        countdown "$BREAK_TIME" "Break time is up. Time to get back to work." &
+        TIMER_PID=$!
+        echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Update the PID file
+        wait $TIMER_PID
+        if [[ $? -ne 0 ]]; then
+            echo "Pomodoro timer was stopped during the break session."
+            stop_timer
+            return
+        fi
+    done
+}
 
-    # Wait for the work session to finish
-    wait $TIMER_PID
-
-    # Start the break session
-    countdown "$BREAK_TIME" "Break time is up. Time to get back to work." &
-    TIMER_PID=$!
-    echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Update the PID file
-
-    log_info "Break session started with $BREAK_TIME minutes."
-
-    # Wait for the break session to finish
-    wait $TIMER_PID
+stop_timer() {
+    if [[ -f /tmp/pomodoro_timer.pid ]]; then
+        local TIMER_PID=$(cat /tmp/pomodoro_timer.pid)
+        if [[ -d "/proc/$TIMER_PID" ]]; then
+            echo "Stopping the timer..."
+            kill $TIMER_PID
+            wait $TIMER_PID 2>/dev/null
+            rm /tmp/pomodoro_timer.pid  # Remove the PID file
+            rm /tmp/pomodoro_work_time.txt  # Remove work time file
+            rm /tmp/pomodoro_break_time.txt  # Remove break time file
+        else
+            echo "No timer is running."
+        fi
+    else
+        echo "No timer is running."
+    fi
 }
 
 show_status() {
@@ -69,35 +88,11 @@ show_status() {
             local WORK_TIME=$(cat /tmp/pomodoro_work_time.txt)
             local BREAK_TIME=$(cat /tmp/pomodoro_break_time.txt)
             echo "Pomodoro timer is running with $WORK_TIME minutes of work and $BREAK_TIME minutes of break."
-
-            log_info "Status checked: Pomodoro timer running with $WORK_TIME minutes of work and $BREAK_TIMES minutes of break time."
         else
             echo "No timer is currently running."
         fi
     else
         echo "No timer is currently running."
-    fi
-}
-
-stop_timer() {
-    if [[ -f /tmp/pomodoro_timer.pid ]]; then
-        local TIMER_PID=$(cat /tmp/pomodoro_timer.pid)
-        if [[ -d "/proc/$TIMER_PID" ]]; then
-            echo "Stopping the timer..."
-            kill $TIMER_PID
-            wait $TIMER_PID 2>/dev/null
-            rm /tmp/pomodoro_timer.pid  # Remove the PID file after stopping
-            rm /tmp/pomodoro_work_time.txt  # Remove work time file
-            rm /tmp/pomodoro_break_time.txt  # Remove break time file
-
-            log_info "Pomodoro timer stopped (PID: $TIMER_PID)."
-        else
-            echo "No timer is running."
-            log_warning "Attempted to stop timer, but no timer was running."
-        fi
-    else
-        echo "No timer is running."
-        log_warning "Attempted to stop timer, but no timer was running."
     fi
 }
 
