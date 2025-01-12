@@ -2,6 +2,7 @@
 
 source ../lib/timer.sh
 source ../lib/notifications.sh
+source ../lib/logger.sh
 
 DEFAULT_WORK_TIME=25
 DEFAULT_BREAK_TIME=5

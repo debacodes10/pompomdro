@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 TIMER_PID=""
@@ -35,6 +34,8 @@ start_pomodoro() {
     echo "Work time: $WORK_TIME minutes."
     echo "Break time: $BREAK_TIME minutes."
 
+    log_info "Pomodoro timer started with $WORK_TIME minutes of work and $BREAK_TIME minutes of break time."
+
     # Save the work and break times to a file
     echo "$WORK_TIME" > /tmp/pomodoro_work_time.txt
     echo "$BREAK_TIME" > /tmp/pomodoro_break_time.txt
@@ -44,6 +45,8 @@ start_pomodoro() {
     TIMER_PID=$!
     echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Save the PID to a file
 
+    log_info "Pomodoro timer process started with PID: $TIMER_PID"
+
     # Wait for the work session to finish
     wait $TIMER_PID
 
@@ -51,6 +54,8 @@ start_pomodoro() {
     countdown "$BREAK_TIME" "Break time is up. Time to get back to work." &
     TIMER_PID=$!
     echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Update the PID file
+
+    log_info "Break session started with $BREAK_TIME minutes."
 
     # Wait for the break session to finish
     wait $TIMER_PID
@@ -64,6 +69,8 @@ show_status() {
             local WORK_TIME=$(cat /tmp/pomodoro_work_time.txt)
             local BREAK_TIME=$(cat /tmp/pomodoro_break_time.txt)
             echo "Pomodoro timer is running with $WORK_TIME minutes of work and $BREAK_TIME minutes of break."
+
+            log_info "Status checked: Pomodoro timer running with $WORK_TIME minutes of work and $BREAK_TIMES minutes of break time."
         else
             echo "No timer is currently running."
         fi
@@ -82,11 +89,15 @@ stop_timer() {
             rm /tmp/pomodoro_timer.pid  # Remove the PID file after stopping
             rm /tmp/pomodoro_work_time.txt  # Remove work time file
             rm /tmp/pomodoro_break_time.txt  # Remove break time file
+
+            log_info "Pomodoro timer stopped (PID: $TIMER_PID)."
         else
             echo "No timer is running."
+            log_warning "Attempted to stop timer, but no timer was running."
         fi
     else
         echo "No timer is running."
+        log_warning "Attempted to stop timer, but no timer was running."
     fi
 }
 
