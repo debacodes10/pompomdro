@@ -1,7 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="/tmp/pom.log"
-ls ..
+LOG_FILE="/tmp/pom/pom.log"
 log_message() {
 	local LEVEL=$1
 	local MESSAGE=$2

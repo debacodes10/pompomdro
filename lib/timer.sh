@@ -33,15 +33,15 @@ start_pomodoro() {
     echo "Break time: $BREAK_TIME minutes."
 
     # Save the work and break times to a file
-    echo "$WORK_TIME" > /tmp/pomodoro_work_time.txt
-    echo "$BREAK_TIME" > /tmp/pomodoro_break_time.txt
+    echo "$WORK_TIME" > /tmp/pom/pomodoro_work_time.txt
+    echo "$BREAK_TIME" > /tmp/pom/pomodoro_break_time.txt
 
     # Continuous loop for work and break cycles
     while true; do
         echo "Work session starting..."
         countdown "$WORK_TIME" "Work time is up. Time for a break." &
         TIMER_PID=$!
-        echo $TIMER_PID > /tmp/pomodoro_timer.pid  # Save the PID to a file
+        echo $TIMER_PID > /tmp/pom/pomodoro_timer.pid  # Save the PID to a file
         wait $TIMER_PID
         if [[ $? -ne 0 ]]; then
             echo "Pomodoro timer was stopped during the work session."
@@ -63,30 +63,35 @@ start_pomodoro() {
 }
 
 stop_timer() {
-    if [[ -f /tmp/pomodoro_timer.pid ]]; then
-        local TIMER_PID=$(cat /tmp/pomodoro_timer.pid)
+    if [[ -f /tmp/pom/pomodoro_timer.pid ]]; then
+        # Read the PID from the file
+        local TIMER_PID=$(cat /tmp/pom/pomodoro_timer.pid)
+
+        # Check if the process exists before attempting to kill it
         if [[ -d "/proc/$TIMER_PID" ]]; then
             echo "Stopping the timer..."
             kill $TIMER_PID
-            wait $TIMER_PID 2>/dev/null
-            rm /tmp/pomodoro_timer.pid  # Remove the PID file
-            rm /tmp/pomodoro_work_time.txt  # Remove work time file
-            rm /tmp/pomodoro_break_time.txt  # Remove break time file
+            wait $TIMER_PID 2>/dev/null  # Wait for the process to terminate
         else
-            echo "No timer is running."
+            echo "No running timer found. Process $TIMER_PID is not active."
         fi
+
+        # Clean up the PID and time files if they exist
+        rm -f /tmp/pom/pomodoro_timer.pid
+        rm -f /tmp/pom/pomodoro_work_time.txt
+        rm -f /tmp/pom/pomodoro_break_time.txt
     else
         echo "No timer is running."
     fi
 }
 
 show_status() {
-    if [[ -f /tmp/pomodoro_timer.pid ]]; then
-        local TIMER_PID=$(cat /tmp/pomodoro_timer.pid)
+    if [[ -f /tmp/pom/pomodoro_timer.pid ]]; then
+        local TIMER_PID=$(cat /tmp/pom/pomodoro_timer.pid)
         if [[ -d "/proc/$TIMER_PID" ]]; then
             # Read work and break times from the saved files
-            local WORK_TIME=$(cat /tmp/pomodoro_work_time.txt)
-            local BREAK_TIME=$(cat /tmp/pomodoro_break_time.txt)
+            local WORK_TIME=$(cat /tmp/pom/pomodoro_work_time.txt)
+            local BREAK_TIME=$(cat /tmp/pom/pomodoro_break_time.txt)
             echo "Pomodoro timer is running with $WORK_TIME minutes of work and $BREAK_TIME minutes of break."
         else
             echo "No timer is currently running."
@@ -97,8 +102,8 @@ show_status() {
 }
 
 pause_timer() {
-    if [[ -f /tmp/pomodoro_timer.pid ]]; then
-        local TIMER_PID=$(cat /tmp/pomodoro_timer.pid)
+    if [[ -f /tmp/pom/pomodoro_timer.pid ]]; then
+        local TIMER_PID=$(cat /tmp/pom/pomodoro_timer.pid)
         if [[ -d "/proc/$TIMER_PID" ]]; then
             echo "Pausing the timer..."
             kill -STOP $TIMER_PID
@@ -111,8 +116,8 @@ pause_timer() {
 }
 
 resume_timer() {
-    if [[ -f /tmp/pomodoro_timer.pid ]]; then
-        local TIMER_PID=$(cat /tmp/pomodoro_timer.pid)
+    if [[ -f /tmp/pom/pomodoro_timer.pid ]]; then
+        local TIMER_PID=$(cat /tmp/pom/pomodoro_timer.pid)
         if [[ -d "/proc/$TIMER_PID" ]]; then
             echo "Resuming the timer..."
             kill -CONT $TIMER_PID

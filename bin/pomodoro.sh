@@ -1,8 +1,8 @@
 #!/bin/bash
 
-source ../lib/timer.sh
-source ../lib/notifications.sh
-source ../lib/logger.sh
+source /usr/local/lib/pomodoro/timer.sh
+source /usr/local/lib/pomodoro/logger.sh
+source /usr/local/lib/pomodoro/notifications.sh
 
 DEFAULT_WORK_TIME=25
 DEFAULT_BREAK_TIME=5
@@ -13,6 +13,8 @@ show_help() {
     echo "  pom start [-t <work_time>] [-b <break_time>]"
     echo "  pom status"
     echo "  pom stop"
+    echo "  pom pause"
+    echo "  pom resume"
     echo ""
     echo "Options:"
     echo "  -t, --time    Specify the work time in minutes (default: 25)"
@@ -21,20 +23,23 @@ show_help() {
 }
 
 start_timer() {
-	WORK_TIME=$DEFAULT_WORK_TIME
-	BREAK_TIME=$DEFAULT_BREAK_TIME
-	
-	while [[ "$1" == "-t" || "$1" == "--time" ]]; do
-		WORK_TIME=$2
-		shift 2
-	done
+    WORK_TIME=$DEFAULT_WORK_TIME
+    BREAK_TIME=$DEFAULT_BREAK_TIME
 
-	while [[ "$1" == "-b" || "$1" == "--break" ]]; do
-		BREAK_TIME=$2
-		shift 2
-	done
+    while [[ "$1" == "-t" || "$1" == "--time" ]]; do
+        WORK_TIME=$2
+        shift 2
+    done
 
-	start_pomodoro "$WORK_TIME" "$BREAK_TIME"
+    while [[ "$1" == "-b" || "$1" == "--break" ]]; do
+        BREAK_TIME=$2
+        shift 2
+    done
+
+    echo "Starting Pomodoro timer with $WORK_TIME minutes of work and $BREAK_TIME minutes of break."
+
+    # Call the start_pomodoro function with user-provided or default values
+    start_pomodoro "$WORK_TIME" "$BREAK_TIME"
 }
 
 while [[ "$1" != "" ]]; do
