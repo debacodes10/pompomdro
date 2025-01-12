@@ -56,7 +56,7 @@ else
 fi
 
 # Set execute permission for the main script
-SCRIPT="../bin/pomodoro.sh"
+SCRIPT="bin/pomodoro.sh"
 if [[ -f $SCRIPT ]]; then
     echo -e "${GREEN}Setting execute permission for $SCRIPT...${RESET}"
     chmod +x $SCRIPT
